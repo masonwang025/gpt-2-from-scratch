@@ -125,13 +125,14 @@ class CausalSelfAttention(nn.Module):
         assert config.n_embd % config.n_head == 0
         # K, Q, V projections for all heads, but in a batch
         self.c_attn = nn.Linear(config.n_embd, config.n_embd * 3)
-        # output projection (not 100% sure why this is necessary bc we're doing this in the MLP)
+        # output projection (allowing different subspaces captured by different heads to share information)
+        # MLP will be token independent while this projection layer uses information across different tokens
         self.c_proj = nn.Linear(config.n_embd, config.n_embd)
         # regularization
         self.n_head = config.n_head
         self.n_embd = config.n_embd
         # this is NOT a 'bias', but a mask, but we are following the OpenAI/HF naming convention
-        self.register_buffer(
+        self.register_buffer(  # register_buffer is a keyword in pytorch
             "bias",
             torch.tril(torch.ones(config.block_size, config.block_size)).view(
                 1, 1, config.block_size, config.block_size
