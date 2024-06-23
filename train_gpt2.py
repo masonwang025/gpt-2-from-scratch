@@ -3,15 +3,6 @@ import torch
 import torch.nn as nn
 
 
-@dataclass
-class GPTConfig:
-    block_size: int = 8192
-    vocab_size: int = 65
-    n_embd: int = 768
-    n_layers: int = 12
-    n_heads: int = 12
-
-
 class CausalSelfAttention(nn.Module):
     # think of self attention as where the tokens communicate with each other
     def __init__(self, config: GPTConfig):
@@ -109,6 +100,17 @@ class Block(nn.Module):
         x = x + self.attn(self.ln_1(x))
         x = x + self.mlp(self.ln_2(x))
         return x
+
+
+@dataclass
+class GPTConfig:
+    block_size: int = 1024  # max sequence length
+    vocab_size: int = (
+        50257  # number of tokens: 50k BPE + 256 bytes tokens + 1 <|end_of_sequence|> token
+    )
+    n_embd: int = 768  # embedding dimensionality
+    n_layers: int = 12  # number of transformer layers
+    n_heads: int = 12  # number of attention heads
 
 
 class GPT(nn.Module):
