@@ -85,9 +85,9 @@ class GPT(nn.Module):
         assert model_type in {"gpt2", "gpt2-medium", "gpt2-large", "gpt2-xl"}
         from transformers import GPT2LMHeadModel
 
-        print("Loading weights from pretrained gpt: %s" % model_type)
+        print("loading weights from pretrained gpt: %s" % model_type)
 
-        # n_layer, n_head, and n_embd are determined from model_type
+        # n_layer, n_head and n_embd are determined from model_type
         config_args = {
             "gpt2": dict(n_layer=12, n_head=12, n_embd=768),  # 124M params
             "gpt2-medium": dict(n_layer=24, n_head=16, n_embd=1024),  # 350M params
@@ -96,7 +96,6 @@ class GPT(nn.Module):
         }[model_type]
         config_args["vocab_size"] = 50257  # always 50257 for GPT model checkpoints
         config_args["block_size"] = 1024  # always 1024 for GPT model checkpoints
-
         # create a from-scratch initialized minGPT model
         config = GPTConfig(**config_args)
         model = GPT(config)
@@ -223,6 +222,7 @@ class MLP(nn.Module):
         self.gelu = nn.GELU(approximate="tanh")
         # one linear layer back to size n_embd
         self.c_proj = nn.Linear(4 * config.n_embd, config.n_embd)
+        self.c_proj.NANOGPT_SCALE_INIT = 1
 
     def forward(self, x):
         x = self.c_fc(x)
