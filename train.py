@@ -30,7 +30,7 @@ x = buf[:-1].view(B, T)
 y = buf[1:].view(B, T)
 
 # get logits
-model = GPT(GPTConfig())
+model = GPT(GPTConfig(vocab_size=50304))  # divisible by 128, or 2 ** 7
 model.to(device)
 model = torch.compile(model)
 
