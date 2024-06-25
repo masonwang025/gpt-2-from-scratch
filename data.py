@@ -10,7 +10,7 @@ def load_tokens(filename):
     return ptt
 
 class DataLoaderLite:
-    def __init__(self, B, T, process_rank, num_processes, split):
+    def __init__(self, B, T, process_rank, num_processes, split, master_process):
         self.B = B
         self.T = T
         self.process_rank = process_rank
@@ -27,7 +27,9 @@ class DataLoaderLite:
         assert len(shards) > 0, f"no shards found for split {split}"
         if master_process:
             print(f"found {len(shards)} shards for split {split}")
+        self.reset()
 
+    def reset(self):
         # state, init at shard zero
         self.current_shard = 0
         self.tokens = load_tokens(self.shards[self.current_shard])
@@ -35,8 +37,8 @@ class DataLoaderLite:
 
     def next_batch(self):
         B, T = self.B, self.T
-        buf = self.tokens[self.current_position : self.current_position + B * T + 1]
-        x = (buf[:-1]).view(B, T)  # inputs
+        buf = self.tokens[self.current_position : self.current_position+B*T+1]
+        x = (buf[:-1]).view(B, T) # inputs
         y = (buf[1:]).view(B, T) # targets
         # advance the position in the tensor
         self.current_position += B * T * self.num_processes
