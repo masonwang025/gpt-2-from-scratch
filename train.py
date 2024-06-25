@@ -60,8 +60,8 @@ raw_model = model.module if ddp else model # always contains the "raw" unwrapped
 # learning rate scheduler
 max_lr = 6e-4
 min_lr = max_lr * 0.1 # 10% of max_lr
-warmup_steps = 10
-max_steps = 50
+warmup_steps = 715
+max_steps = 19073
 def get_lr(it):
     # 1) linear warmup for warmup_steps
     if it < warmup_steps:
@@ -76,14 +76,14 @@ def get_lr(it):
     return min_lr + coeff * (max_lr - min_lr)
     
 total_batch_size = 524288 # 2**19, ~0.5M, in number of tokens
-B, T = 16, 1024 # B is micro batch size
+B, T = 64, 1024 # B is micro batch size
 assert total_batch_size % (B * T * ddp_world_size) == 0, "make sure total_batch_size is divisible by B * T * ddp_world_size"
 grad_accum_steps = total_batch_size // (B * T * ddp_world_size)
 if master_process:
     print(f"total desired batch size: {total_batch_size}")
     print(f"=> calculated gradient accumulation steps: {grad_accum_steps}")
 
-train_loader = DataLoaderLite(B=B, T=T, process_rank=ddp_rank, num_processes=ddp_world_size, master_process=master_process)
+train_loader = DataLoaderLite(B=B, T=T, process_rank=ddp_rank, num_processes=ddp_world_size, split="train")
 
 torch.set_float32_matmul_precision("high")  # drop from higheest to tf32 for matmul
 
@@ -122,7 +122,7 @@ for step in range(max_steps):
     tokens_processed = train_loader.B * train_loader.T * grad_accum_steps * ddp_world_size
     tokens_per_sec = tokens_processed / dt
     if master_process:
-        print(f"step {step:4d} | loss: {loss_accum.item():.6f} | lr {lr:.4e} | norm: {norm:.4f} | dt: {dt*1000:.2f}ms | tok/sec: {tokens_per_sec:.2f}")
+        print(f"step {step:5d} | loss: {loss_accum.item():.6f} | lr {lr:.4e} | norm: {norm:.4f} | dt: {dt*1000:.2f}ms | tok/sec: {tokens_per_sec:.2f}")
 
 if ddp:
     destroy_process_group()
