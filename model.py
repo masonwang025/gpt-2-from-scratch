@@ -32,8 +32,12 @@ class GPT(nn.Module):
                 "ln_f": nn.LayerNorm(config.n_embd),
             }
         )
+
         # output of lm will have dimension of vocab_size (for softmax)
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
+
+        # weight sharing between wte and lm_head
+        self.lm_head.weight = self.transformer.wte.weight
 
     def forward(self, idx):
         # idx is of shape (B, T)
