@@ -50,7 +50,10 @@ else:
 device_type = "cuda" if device.startswith("cuda") else "cpu"
 
 torch.manual_seed(1337)
-torch.cuda.manual_seed(1337)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed(1337)
+
+enc = tiktoken.get_encoding("gpt2")
 
 # create model
 model = GPT(GPTConfig(vocab_size=50304), master_process=master_process)  # divisible by 128, or 2 ** 7
