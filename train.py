@@ -10,10 +10,14 @@ elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
     device = "mps"
 print(f"Using device: {device}")
 
+torch.manual_seed(42)
+torch.cuda.manual_seed(42)
+
 # get a data batch (see play.ipynb)
 import tiktoken
 
 text = open("shakespeare.txt", "r").read()
+text = text[:10000]
 enc = tiktoken.get_encoding("gpt2")
 tokens = enc.encode(text)
 
@@ -26,10 +30,18 @@ y = buf[1:].view(B, T)
 # get logits
 model = GPT(GPTConfig())
 model.to(device)
-logits = model(x)
-print(logits.shape)
+logits, loss = model(x, y)
+print(loss)
 
-"""
+
+# -------------------------------------------
+
+import sys
+
+sys.exit(0)
+
+# -------------------------------------------
+
 ### FROM SECTION 1
 num_return_sequences = 5
 max_length = 30
@@ -72,4 +84,3 @@ for i in range(num_return_sequences):
     # decode the sequence
     decoded = enc.decode(tokens)
     print(">", decoded)
-"""

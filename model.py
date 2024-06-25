@@ -39,7 +39,7 @@ class GPT(nn.Module):
         # weight sharing between wte and lm_head
         self.lm_head.weight = self.transformer.wte.weight
 
-    def forward(self, idx):
+    def forward(self, idx, targets=None):
         # idx is of shape (B, T)
         B, T = idx.size()
         assert (
@@ -53,8 +53,13 @@ class GPT(nn.Module):
         for block in self.transformer.h:
             x = block(x)
         x = self.transformer.ln_f(x)
-        logits = self.lm_head(x)
-        return logits
+        logits = self.lm_head(x)  # (B, T, vocab_size)
+        loss = None
+        if targets is not None:
+            # logits.view(-1, logits.size(-1)) reshapes logits to (B*T, vocab_size)
+            # targets.view(-1) reshapes targets to (B*T)
+            loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1))
+        return logits, loss
 
     @classmethod
     def from_pretrained(cls, model_type):
