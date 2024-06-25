@@ -32,6 +32,7 @@ y = buf[1:].view(B, T)
 # get logits
 model = GPT(GPTConfig())
 model.to(device)
+model = torch.compile(model)
 
 train_loader = DataLoaderLite(B=16, T=1024)
 
@@ -43,7 +44,10 @@ for i in range(50):
     x, y = train_loader.next_batch()
     x, y = x.to(device), y.to(device)
     optimizer.zero_grad()
-    logits, loss = model(x, y)
+    with torch.autocast(
+        device_type="cuda", dtype=torch.bfloat16
+    ):  # this uses bfloat16 for same scale but less precision
+        logits, loss = model(x, y)
     loss.backward()
     optimizer.step()
     if torch.cuda.is_available():
