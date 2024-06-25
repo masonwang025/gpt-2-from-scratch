@@ -1,3 +1,4 @@
+# THIS IS DIRECTLY FROM KARPATHY'S BUILD-NANOGPT REPO
 """
 FineWeb-Edu dataset (for srs pretraining)
 https://huggingface.co/datasets/HuggingFaceFW/fineweb-edu

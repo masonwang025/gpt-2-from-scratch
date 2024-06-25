@@ -45,6 +45,8 @@ else:
     elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
         device = "mps"
     print(f"using device: {device}")
+    
+device_type = "cuda" if device.startswith("cuda") else "cpu"
 
 torch.manual_seed(1337)
 torch.cuda.manual_seed(1337)
@@ -76,7 +78,7 @@ def get_lr(it):
     return min_lr + coeff * (max_lr - min_lr)
     
 total_batch_size = 524288 # 2**19, ~0.5M, in number of tokens
-B, T = 64, 1024 # B is micro batch size
+B, T = 32, 1024 # B is micro batch size
 assert total_batch_size % (B * T * ddp_world_size) == 0, "make sure total_batch_size is divisible by B * T * ddp_world_size"
 grad_accum_steps = total_batch_size // (B * T * ddp_world_size)
 if master_process:
@@ -89,7 +91,7 @@ val_loader = DataLoaderLite(B=B, T=T, process_rank=ddp_rank, num_processes=ddp_w
 
 torch.set_float32_matmul_precision("high")  # drop from higheest to tf32 for matmul
 
-optimizer = raw_model.configure_optimizers(weight_decay=0.1, learning_rate=6e-4, device=device)
+optimizer = raw_model.configure_optimizers(weight_decay=0.1, learning_rate=6e-4, device_type=device_type)
 
 for step in range(max_steps):
     t0 = time.time()
@@ -104,7 +106,7 @@ for step in range(max_steps):
             for _ in range(val_loss_steps):
                 x, y = val_loader.next_batch()
                 x, y = x.to(device), y.to(device)
-                with torch.autocast(device_type=device, dtype=torch.bfloat16):
+                with torch.autocast(device_type=device_type, dtype=torch.bfloat16):
                     logits, loss = model(x, y)
                 loss = loss / val_loss_steps
                 val_loss_accum += loss.detach()
@@ -122,8 +124,7 @@ for step in range(max_steps):
         x, y = train_loader.next_batch()
         x, y = x.to(device), y.to(device)
         with torch.autocast(
-            # temp fix, this should be device_type=device but complaint about device must be "cuda" or "cpu"
-            device_type="cuda", dtype=torch.bfloat16
+            device_type=device_type, dtype=torch.bfloat16
         ):  # this uses bfloat16 for same scale but less precision
                 logits, loss = model(x, y)
         loss = loss / grad_accum_steps # normalize the loss (instead of purely accumulating)
