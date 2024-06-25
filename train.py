@@ -12,6 +12,8 @@ import os
 # DDP launch for e.g. 8 GPUs:
 # torchrun --standalone --nproc_per_node=8 train.py
 
+# for DDP: https://github.com/karpathy/build-nanogpt/commit/ba2554acce54487f07c13563247f2cce683e0d5e
+
 # run the training loop
 from torch.distributed import init_process_group, destroy_process_group
 from torch.nn.parallel import DistributedDataParallel as DDP
