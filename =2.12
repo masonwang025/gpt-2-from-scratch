@@ -1,7 +1,0 @@
-Defaulting to user installation because normal site-packages is not writeable
-Collecting pybind11
-  Downloading pybind11-2.12.0-py3-none-any.whl.metadata (9.5 kB)
-Downloading pybind11-2.12.0-py3-none-any.whl (234 kB)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 235.0/235.0 kB 36.7 MB/s eta 0:00:00
-Installing collected packages: pybind11
-Successfully installed pybind11-2.12.0
