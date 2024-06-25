@@ -14,7 +14,7 @@ class DataLoaderLite:
         tokens = enc.encode(text)
         self.tokens = torch.tensor(tokens)
         print(f"loaded {len(self.tokens)} tokens")
-        print(f"1 epoch = {len(self.tokens) // (B * T)} batches")
+        print(f"1 epoch = {len(self.tokens) // (B * T)} (micro) batches")
 
         # state
         self.current_position = 0
