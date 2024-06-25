@@ -37,7 +37,7 @@ class GPT(nn.Module):
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
 
         # weight sharing between wte and lm_head
-        self.lm_head.weight = self.transformer.wte.weight
+        self.transformer.wte.weight = self.lm_head.weight
 
     def forward(self, idx, targets=None):
         # idx is of shape (B, T)

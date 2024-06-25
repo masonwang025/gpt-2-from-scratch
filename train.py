@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from model import GPT, GPTConfig
+from data import DataLoaderLite
 
 device = "cpu"
 if torch.cuda.is_available():
@@ -31,33 +32,16 @@ y = buf[1:].view(B, T)
 model = GPT(GPTConfig())
 model.to(device)
 
-# optimizer
+train_loader = DataLoaderLite(B=4, T=32)
 optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
 for i in range(50):
+    x, y = train_loader.next_batch()
+    x, y = x.to(device), y.to(device)
     optimizer.zero_grad()
     logits, loss = model(x, y)
     loss.backward()
     optimizer.step()
     print(f"step {i}, loss: {loss.item()}")
-
-
-# sample out 5 streams of max 15 characters
-model.eval()
-model.to(device)
-for i in range(5):
-    start_token = torch.tensor([[enc.encode("I")[0]]], dtype=torch.long).to(device)
-    generated = start_token
-
-    for _ in range(14):  # Generate 14 more tokens to make it 15 in total
-        logits, _ = model(generated)  # (1, T, vocab_size)
-        logits = logits[:, -1, :]  # (1, vocab_size)
-        probs = F.softmax(logits, dim=-1)  # (1, vocab_size)
-        next_token = torch.multinomial(probs, num_samples=1)  # (1, 1)
-        generated = torch.cat((generated, next_token), dim=1)  # (1, T+1)
-
-    # Decode the generated tokens
-    generated_text = enc.decode(generated[0].tolist())
-    print(f"Generated text {i+1}: {generated_text}")
 
 
 # -------------------------------------------
