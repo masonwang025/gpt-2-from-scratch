@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from model import GPT, GPTConfig
 from data import DataLoaderLite
+import time
 
 device = "cpu"
 if torch.cuda.is_available():
@@ -32,16 +33,23 @@ y = buf[1:].view(B, T)
 model = GPT(GPTConfig())
 model.to(device)
 
-train_loader = DataLoaderLite(B=4, T=32)
+train_loader = DataLoaderLite(B=16, T=1024)
+
+# torch.set_float32_matmul_precision("high")  # drop from higheest to tf32 for matmul
+
 optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
 for i in range(50):
+    t0 = time.time()
     x, y = train_loader.next_batch()
     x, y = x.to(device), y.to(device)
     optimizer.zero_grad()
     logits, loss = model(x, y)
     loss.backward()
     optimizer.step()
-    print(f"step {i}, loss: {loss.item()}")
+    # torch.cuda.synchronize()
+    t1 = time.time()
+    dt = (t1 - t0) * 1000
+    print(f"step {i}, loss: {loss.item()}, dt: {dt:.2f}ms")
 
 
 # -------------------------------------------
