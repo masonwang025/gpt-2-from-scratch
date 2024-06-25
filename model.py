@@ -186,6 +186,8 @@ class CausalSelfAttention(nn.Module):
             1, 2
         )  # [B, nh, T, hs]
         # attention (materializes the large (T, T) matrix for all queries and keys)
+        
+        """
         # when transposed, k's shape becomes [B, nh, hs, T]
         # so the dot product is between [B, nh, T, hs] and [B, nh, hs, T] = [B, nh, T, T]
         # k.size(-1) is hs. we scale by 1/sqrt(hs) to prevent the dot product from blowing up (to make softmax more stable)
@@ -202,6 +204,11 @@ class CausalSelfAttention(nn.Module):
         # is a sequence (T long) of weighted sums of the original tokens
         # each weighted sums corresponds to a token in the sequence (for token i, softmax(qi @ kj) * vj), where j goes up to T
         y = att @ v
+        """
+        
+        # use flash attention instead
+        y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        
         # transpose rearranges dimensions so that outputs from diff heads are next to each other
         # specifically, transpose results in [B, T, nh, hs] (where it was originally [B, nh, T, hs])
         y = (

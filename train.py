@@ -36,7 +36,7 @@ model = torch.compile(model)
 
 train_loader = DataLoaderLite(B=16, T=1024)
 
-# torch.set_float32_matmul_precision("high")  # drop from higheest to tf32 for matmul
+torch.set_float32_matmul_precision("high")  # drop from higheest to tf32 for matmul
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
 for i in range(50):
@@ -45,7 +45,7 @@ for i in range(50):
     x, y = x.to(device), y.to(device)
     optimizer.zero_grad()
     with torch.autocast(
-        device_type="cuda", dtype=torch.bfloat16
+        device_type=device, dtype=torch.bfloat16
     ):  # this uses bfloat16 for same scale but less precision
         logits, loss = model(x, y)
     loss.backward()
