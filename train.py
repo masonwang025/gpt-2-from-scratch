@@ -11,8 +11,8 @@ elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
     device = "mps"
 print(f"Using device: {device}")
 
-torch.manual_seed(42)
-torch.cuda.manual_seed(42)
+torch.manual_seed(1337)
+torch.cuda.manual_seed(1337)
 
 # get a data batch (see play.ipynb)
 import tiktoken

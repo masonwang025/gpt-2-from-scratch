@@ -39,6 +39,24 @@ class GPT(nn.Module):
         # weight sharing between wte and lm_head
         self.transformer.wte.weight = self.lm_head.weight
 
+        # init params
+        self.apply(self._init_weights)  # runs it on all modules
+
+    def _init_weights(self, module):
+        # initialize weights according to gpt-3 paper
+        if isinstance(module, nn.Linear):
+            std = 0.02
+            if hasattr(module, "NANOGPT_SCALE_INIT"):
+                # account for growing stdev inside the residual stream by scaling c_proj by 1 * n_layer**-0.5
+                std *= (
+                    2 * self.config.n_layer
+                ) ** -0.5  # x2 because we have 2 layers per block
+            torch.nn.init.normal_(module.weight, mean=0.0, std=std)
+            if module.bias is not None:
+                torch.nn.init.zeros_(module.bias)
+        elif isinstance(module, nn.Embedding):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+
     def forward(self, idx, targets=None):
         # idx is of shape (B, T)
         B, T = idx.size()
@@ -137,6 +155,7 @@ class CausalSelfAttention(nn.Module):
         # output projection (allowing different subspaces captured by different heads to share information)
         # MLP will be token independent while this projection layer uses information across different tokens
         self.c_proj = nn.Linear(config.n_embd, config.n_embd)
+        self.c_proj.NANOGPT_SCALE_INIT = 1
         # regularization
         self.n_head = config.n_head
         self.n_embd = config.n_embd
