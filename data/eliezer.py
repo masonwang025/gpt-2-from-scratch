@@ -107,6 +107,8 @@ else:
     comments = fetch_data(comments_query)
     documents = posts + comments
 
+    np.random.shuffle(documents)
+
     # Save the documents to the local file
     with open(local_data_file, "w") as file:
         json.dump(documents, file)
@@ -175,9 +177,7 @@ if __name__ == "__main__":
                 all_tokens_np[0 : len(tokens) - remainder] = tokens[remainder:]
                 token_count = len(tokens) - remainder
 
-        # Write any remaining tokens as the last shard
+        # Write any remaining tokens as the last (val) shard
         if token_count != 0:
-            filename = os.path.join(
-                DATA_CACHE_DIR, f"lesswrong_train_{shard_index:06d}"
-            )
+            filename = os.path.join(DATA_CACHE_DIR, f"lesswrong_val_{shard_index:06d}")
             write_datafile(filename, all_tokens_np[:token_count])
