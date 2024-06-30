@@ -6,7 +6,6 @@ from data.loader import DataLoaderLite
 import time
 import math
 import os
-from hellaswag import render_example, iterate_examples, get_most_likely_row
 import tiktoken
 
 # simple launch:
@@ -67,6 +66,13 @@ if use_compile:
 # move model to device
 model = model.to(device)
 
+print("LOADED PRETRAINING CHECKPOINT")
+# LOAD IN log/model_19072.pt
+checkpoint_path = os.path.join("log", "model_19072.pt")
+checkpoint = torch.load(checkpoint_path, map_location=device_type)
+model.load_state_dict(checkpoint["model"])
+
+
 if ddp:
     model = DDP(model, device_ids=[ddp_local_rank])
 raw_model = model.module if ddp else model  # always contains the "raw" unwrapped model
@@ -75,9 +81,7 @@ raw_model = model.module if ddp else model  # always contains the "raw" unwrappe
 max_lr = 6e-4
 min_lr = max_lr * 0.1  # 10% of max_lr
 warmup_steps = 715
-max_steps = (
-    19073  # 19,073 steps is ~1 epoch, if data is 10B tokens and batch size 0.5M tokens
-)
+max_steps = 190
 
 
 def get_lr(it):
@@ -113,6 +117,7 @@ train_loader = DataLoaderLite(
     num_processes=ddp_world_size,
     split="train",
     master_process=master_process,
+    data_root="data/yudkowsky_lesswrong",
 )
 
 val_loader = DataLoaderLite(
@@ -122,6 +127,7 @@ val_loader = DataLoaderLite(
     num_processes=ddp_world_size,
     split="val",
     master_process=master_process,
+    data_root="data/yudkowsky_lesswrong",
 )
 
 torch.set_float32_matmul_precision("high")  # drop from higheest to tf32 for matmul
@@ -178,41 +184,6 @@ for step in range(max_steps):
                 # karpathy: you might also want to add optimizer.state_dict() and
                 # rng seeds etc., if you wanted to more exactly resume training
                 torch.save(checkpoint, checkpoint_path)
-
-    # once in a while evaluate hellaswag
-    if (step % 250 == 0 or last_step) and (not use_compile):
-        num_correct_norm = 0
-        num_total = 0
-        for i, example in enumerate(iterate_examples("val")):
-            # only process examples where i % ddp_world_size == ddp_rank
-            if i % ddp_world_size != ddp_rank:
-                continue
-            # render the example into tokens and labels
-            _, tokens, mask, label = render_example(example)
-            tokens = tokens.to(device)
-            mask = mask.to(device)
-            # get the logits
-            with torch.no_grad():
-                with torch.autocast(device_type=device_type, dtype=torch.bfloat16):
-                    logits, loss = model(tokens)
-                pred_norm = get_most_likely_row(tokens, mask, logits)
-            num_total += 1
-            num_correct_norm += int(pred_norm == label)
-        # reduce the stats across all processes
-        if ddp:
-            num_total = torch.tensor(num_total, dtype=torch.long, device=device)
-            num_correct_norm = torch.tensor(
-                num_correct_norm, dtype=torch.long, device=device
-            )
-            dist.all_reduce(num_total, op=dist.ReduceOp.SUM)
-            dist.all_reduce(num_correct_norm, op=dist.ReduceOp.SUM)
-            num_total = num_total.item()
-            num_correct_norm = num_correct_norm.item()
-        acc_norm = num_correct_norm / num_total
-        if master_process:
-            print(f"HellaSwag accuracy: {num_correct_norm}/{num_total}={acc_norm:.4f}")
-            with open(log_file, "a") as f:
-                f.write(f"{step} hella {acc_norm:.4f}\n")
 
     # once in a while generate from the model (except step 0, which is noise)
     if ((step > 0 and step % 250 == 0) or last_step) and (not use_compile):
