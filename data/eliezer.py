@@ -159,7 +159,9 @@ if __name__ == "__main__":
                 progress_bar.update(len(tokens))
             else:
                 # Write the current shard and start a new one
-                filename = os.path.join(DATA_CACHE_DIR, f"lesswrong_{shard_index:06d}")
+                filename = os.path.join(
+                    DATA_CACHE_DIR, f"lesswrong_train_{shard_index:06d}"
+                )
                 # Split the document into whatever fits in this shard; the remainder goes to next one
                 remainder = shard_size - token_count
                 progress_bar.update(remainder)
@@ -175,5 +177,7 @@ if __name__ == "__main__":
 
         # Write any remaining tokens as the last shard
         if token_count != 0:
-            filename = os.path.join(DATA_CACHE_DIR, f"lesswrong_{shard_index:06d}")
+            filename = os.path.join(
+                DATA_CACHE_DIR, f"lesswrong_train_{shard_index:06d}"
+            )
             write_datafile(filename, all_tokens_np[:token_count])
