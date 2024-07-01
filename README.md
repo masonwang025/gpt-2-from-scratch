@@ -42,7 +42,7 @@ python yap.py
 
 **After `train.py`, this GPT model scores 30.46% on hellaswag (Eleuther Harness reports 31.14% for GPT-2 124M)** See `log/log.txt` for training logs.
 
-Running `yap.py` will allow you to have "EliezerGPT" complete your sentences. It's honestly just nonsense, but it was fun to quickly throw this together.
+Running `data/eliezer.py` (scrapes all of Eliezer's writing) and `yap.py` will allow you to have "EliezerGPT" complete your sentences. It's honestly just nonsense, but it was fun to quickly throw this together.
 
 ```
 Start the sentence: My thoughts on AGI are
