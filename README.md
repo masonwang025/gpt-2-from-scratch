@@ -1,6 +1,8 @@
 # gpt-2-from-scratch
 
-Implementing [andrej's gpt-2](https://www.youtube.com/watch?v=l8pRSuU81PU) from scratch, training using FineWeb to train. For fun, I scrape all of Eliezer's writing on LessWrong and finetune the model on it.
+Implementing GPT-2 (124M) from scratch, following [Andrej's video](https://www.youtube.com/watch?v=l8pRSuU81PU) + training using FineWeb dataset.
+
+For fun, I scrape all of Eliezer's writing on LessWrong and finetune the model on it.
 
 ## _setup_
 
@@ -8,7 +10,7 @@ Implementing [andrej's gpt-2](https://www.youtube.com/watch?v=l8pRSuU81PU) from 
 pip install -r requirements.txt
 ```
 
-You can then play around with `play.ipynb` to see HF's GPT-2 architecture and to play with the shakespeare dataset.
+You can then play around with `play.ipynb` to see HF's GPT-2 architecture and to play with the Shakespeare dataset.
 
 Download data for training:
 
@@ -38,7 +40,7 @@ python yap.py
 
 ### _results_
 
-See `log/log.txt` for training logs: validation loss (with fineweb) is 3.0729 and loss on hellaswag is 0.3046.
+**After `train.py`, this GPT model scores 30.46% on hellaswag (Eleuther Harness reports 31.14%)** See `log/log.txt` for training logs.
 
 Running `yap.py` will allow you to have "EliezerGPT" complete your sentences. It's not very good (hence it yaps).
 
