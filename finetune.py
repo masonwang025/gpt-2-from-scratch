@@ -11,7 +11,7 @@ import tiktoken
 # simple launch:
 # python train_gpt2.py
 # DDP launch for e.g. 8 GPUs:
-# torchrun --standalone --nproc_per_node=8 train.py
+# torchrun --standalone --nproc_per_node=8 finetune.py
 
 # for DDP: https://github.com/karpathy/build-nanogpt/commit/ba2554acce54487f07c13563247f2cce683e0d5e
 
@@ -81,7 +81,7 @@ raw_model = model.module if ddp else model  # always contains the "raw" unwrappe
 max_lr = 6e-4
 min_lr = max_lr * 0.1  # 10% of max_lr
 warmup_steps = 715
-max_steps = 190
+max_steps = 1000
 
 
 def get_lr(it):
@@ -173,7 +173,7 @@ for step in range(max_steps):
             print(f"validation loss: {val_loss_accum.item():.4f}")
             with open(log_file, "a") as f:
                 f.write(f"{step} val {val_loss_accum.item():.4f}\n")
-            if step > 0 and (step % 1000 == 0 or last_step):
+            if step > 0 and (step % 500 == 0 or last_step):
                 checkpoint_path = os.path.join(log_dir, f"model_{step:05d}.pt")
                 checkpoint = {
                     "model": raw_model.state_dict(),
@@ -190,7 +190,7 @@ for step in range(max_steps):
         model.eval()
         num_return_sequences = 4
         max_length = 32
-        tokens = enc.encode("Hello, I'm a language model,")
+        tokens = enc.encode("Here's what I believe:")
         tokens = torch.tensor(tokens, dtype=torch.long)
         tokens = tokens.unsqueeze(0).repeat(num_return_sequences, 1)
         xgen = tokens.to(device)
