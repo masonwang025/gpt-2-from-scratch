@@ -21,7 +21,7 @@ def load_model(checkpoint_path, device):
 
 # generate response
 def generate_response(
-    model, enc, prompt, max_length=100, num_return_sequences=1, device="cpu"
+    model, enc, prompt, max_length=200, num_return_sequences=1, device="cpu"
 ):
     tokens = enc.encode(prompt)
     tokens = torch.tensor(tokens, dtype=torch.long).unsqueeze(0).to(device)

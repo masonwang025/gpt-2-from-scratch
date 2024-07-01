@@ -28,3 +28,32 @@ torchrun --standalone --nproc_per_node=8 train.py
 # finetune
 torchrun --standalone --nproc_per_node=8 finetune.py
 ```
+
+Run the finetuned model:
+
+```bash
+# because all it does it yaps
+python yap.py
+```
+
+### _results_
+
+See `log/log.txt` for training logs: validation loss (with fineweb) is 3.0729 and loss on hellaswag is 0.3046.
+
+Running `yap.py` will allow you to have "EliezerGPT" complete your sentences. It's not very good (hence it yaps).
+
+```
+Start the sentence: My thoughts on AGI are
+
+
+Eliezer: My thoughts on AGI are that you could be on the safe side or they may lead you to the wrong area. So you may want to look into what this is and what you can do to avoid it.
+- How can you tell if something is unsafe? Your answer can not be in terms of the danger it’s generating!
+- How can you tell if something is an issue? When it comes to hazards and safety, there is no simple way to know what has the ability to lead to problems.
+The danger of a workplace disaster is something which the worker is constantly putting on their life by doing wrong things, like not wearing their safety gear or not performing necessary equipment to help or support them.
+We are going to answer the question as soon as possible. We will also discuss various types of hazards.
+- Safety Hazards
+- How to prevent these hazards
+- Dangers in the workplace
+- Safety for workers
+- How to prevent falls
+```
