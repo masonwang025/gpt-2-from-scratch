@@ -19,7 +19,7 @@ class GPTConfig:
 
 
 class GPT(nn.Module):
-    def __init__(self, config, master_process):
+    def __init__(self, config, master_process=None):
         super().__init__()
         self.config = config
         self.master_process = master_process
@@ -82,7 +82,9 @@ class GPT(nn.Module):
             loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1))
         return logits, loss
 
-    def configure_optimizers(self, weight_decay, learning_rate, device_type, master_process):
+    def configure_optimizers(
+        self, weight_decay, learning_rate, device_type, master_process
+    ):
         # start with all of the candidate parameters (that require grad)
         param_dict = {pn: p for pn, p in self.named_parameters()}
         param_dict = {pn: p for pn, p in param_dict.items() if p.requires_grad}
@@ -91,22 +93,28 @@ class GPT(nn.Module):
         decay_params = [p for n, p in param_dict.items() if p.dim() >= 2]
         nodecay_params = [p for n, p in param_dict.items() if p.dim() < 2]
         optim_groups = [
-            {'params': decay_params, 'weight_decay': weight_decay},
-            {'params': nodecay_params, 'weight_decay': 0.0}
+            {"params": decay_params, "weight_decay": weight_decay},
+            {"params": nodecay_params, "weight_decay": 0.0},
         ]
         num_decay_params = sum(p.numel() for p in decay_params)
         num_nodecay_params = sum(p.numel() for p in nodecay_params)
         if master_process:
-            print(f"num decayed parameter tensors: {len(decay_params)}, with {num_decay_params:,} parameters")
-            print(f"num non-decayed parameter tensors: {len(nodecay_params)}, with {num_nodecay_params:,} parameters")
+            print(
+                f"num decayed parameter tensors: {len(decay_params)}, with {num_decay_params:,} parameters"
+            )
+            print(
+                f"num non-decayed parameter tensors: {len(nodecay_params)}, with {num_nodecay_params:,} parameters"
+            )
         # Create AdamW optimizer and use the fused version if it is available
-        fused_available = 'fused' in inspect.signature(torch.optim.AdamW).parameters
+        fused_available = "fused" in inspect.signature(torch.optim.AdamW).parameters
         use_fused = fused_available and device_type == "cuda"
         if master_process:
             print(f"using fused AdamW: {use_fused}")
-        optimizer = torch.optim.AdamW(optim_groups, lr=learning_rate, betas=(0.9, 0.95), eps=1e-8, fused=use_fused)
+        optimizer = torch.optim.AdamW(
+            optim_groups, lr=learning_rate, betas=(0.9, 0.95), eps=1e-8, fused=use_fused
+        )
         return optimizer
-    
+
     @classmethod
     def from_pretrained(cls, model_type):
         """Loads pretrained GPT-2 model weights from huggingface"""
@@ -216,7 +224,7 @@ class CausalSelfAttention(nn.Module):
             1, 2
         )  # [B, nh, T, hs]
         # attention (materializes the large (T, T) matrix for all queries and keys)
-        
+
         """
         # when transposed, k's shape becomes [B, nh, hs, T]
         # so the dot product is between [B, nh, T, hs] and [B, nh, hs, T] = [B, nh, T, T]
@@ -235,10 +243,10 @@ class CausalSelfAttention(nn.Module):
         # each weighted sums corresponds to a token in the sequence (for token i, softmax(qi @ kj) * vj), where j goes up to T
         y = att @ v
         """
-        
+
         # use flash attention instead
         y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
-        
+
         # transpose rearranges dimensions so that outputs from diff heads are next to each other
         # specifically, transpose results in [B, T, nh, hs] (where it was originally [B, nh, T, hs])
         y = (
