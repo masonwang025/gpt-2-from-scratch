@@ -21,7 +21,7 @@ def load_model(checkpoint_path, device):
 
 # generate response
 def generate_response(
-    model, enc, prompt, max_length=50, num_return_sequences=1, device="cpu"
+    model, enc, prompt, max_length=100, num_return_sequences=1, device="cpu"
 ):
     tokens = enc.encode(prompt)
     tokens = torch.tensor(tokens, dtype=torch.long).unsqueeze(0).to(device)
@@ -38,19 +38,22 @@ def generate_response(
             xcol = torch.gather(topk_indices, -1, ix)
             xgen = torch.cat((xgen, xcol), dim=1)
 
-    return [enc.decode(xgen[i, :].tolist()) for i in range(num_return_sequences)]
+    return [enc.decode(xgen[i].tolist()) for i in range(num_return_sequences)]
 
 
-# chat loop
-def chat(model, enc, device):
-    print("Chatbot is ready to chat! Type 'exit' to end the conversation.")
+# generate a few sequences, after asking user to start sentence
+def run(model, enc, device):
+    print("EliezerGPT is ready to generate completions! Type 'exit' to exit.")
+
     while True:
-        user_input = input("User: ")
+        user_input = input("Start the sentence: ")
         if user_input.lower() == "exit":
             break
 
         response = generate_response(model, enc, user_input, device=device)
-        print(f"Assistant: {response[0]}")
+        print(f"\n\nEliezer: {response[0]}")
+
+        print("\n\n")
 
 
 if __name__ == "__main__":
@@ -58,4 +61,4 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     model, enc = load_model(checkpoint_path, device)
-    chat(model, enc, device)
+    run(model, enc, device)
